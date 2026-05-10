@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debt Book Mobile</title>
+
+<style>
+body{
+    margin:0;
+    font-family: Arial;
+    background:#ffe6f0;
+    display:flex;
+    justify-content:center;
+}
+
+/* 📱 PHONE SCREEN */
+.phone{
+    width:100%;
+    max-width:360px;
+    min-height:100vh;
+    background:#ffe6f0;
+    padding:15px;
+}
+
+/* TITLE */
+h1{
+    text-align:center;
+    color:#0066ff;
+    font-size:24px;
+    margin:10px 0 15px;
+}
+
+/* INPUT BOX */
+.box{
+    background:white;
+    padding:15px;
+    border-radius:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin:6px 0;
+    border-radius:10px;
+    border:1px solid #ddd;
+    font-size:14px;
+}
+
+.add{
+    width:100%;
+    padding:12px;
+    background:#0066ff;
+    color:white;
+    border:none;
+    border-radius:10px;
+    font-size:15px;
+}
+
+/* CARD */
+.card{
+    background:white;
+    margin-top:12px;
+    padding:12px;
+    border-radius:12px;
+    border-left:5px solid #0066ff;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+}
+
+.name{
+    font-weight:bold;
+    font-size:16px;
+}
+
+.debt{
+    margin-top:5px;
+}
+
+/* WARNING */
+.warn{
+    color:red;
+    font-size:12px;
+    margin-top:5px;
+}
+
+/* BUTTONS */
+.btns{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+}
+
+button{
+    flex:1;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    color:white;
+    font-size:14px;
+}
+
+.paid{
+    background:#00b894;
+}
+
+.delete{
+    background:#ff4d4d;
+}
+</style>
+</head>
+
+<body>
+
+<div class="phone">
+
+<h1>📒 Debt Book</h1>
+
+<div class="box">
+    <input id="name" placeholder="Customer name">
+    <input id="amount" type="number" placeholder="Debt amount">
+    <button class="add" onclick="addDebt()">ADD DEBT</button>
+</div>
+
+<div id="list"></div>
+
+</div>
+
+<script>
+let debts = JSON.parse(localStorage.getItem("debts")) || {};
+
+function save(){
+    localStorage.setItem("debts", JSON.stringify(debts));
+}
+
+function speak(text){
+    let msg = new SpeechSynthesisUtterance(text);
+    speechSynthesis.speak(msg);
+}
+
+function warningVoice(){
+    let msg = new SpeechSynthesisUtterance(
+        "Warning: Buyer’s debt is over the limit"
+    );
+    speechSynthesis.speak(msg);
+}
+
+/* ADD */
+function addDebt(){
+    let name = document.getElementById("name").value.trim();
+    let amount = parseFloat(document.getElementById("amount").value);
+
+    if(!name || isNaN(amount)) return;
+
+    debts[name] = (debts[name] || 0) + amount;
+
+    save();
+    speak(name + " owes RM " + debts[name]);
+
+    if(debts[name] >= 50){
+        warningVoice();
+    }
+
+    render();
+
+    document.getElementById("name").value="";
+    document.getElementById("amount").value="";
+}
+
+/* PAID */
+function markPaid(name){
+    delete debts[name];
+    save();
+    render();
+}
+
+/* DELETE */
+function deleteDebt(name){
+    delete debts[name];
+    save();
+    render();
+}
+
+/* RENDER */
+function render(){
+    let list = document.getElementById("list");
+    list.innerHTML = "";
+
+    for(let name in debts){
+
+        let warn = debts[name] >= 50 ?
+        `<div class="warn">⚠ Debt Over Limit</div>` : "";
+
+        list.innerHTML += `
+        <div class="card">
+            <div class="name">${name}</div>
+            <div class="debt">RM ${debts[name].toFixed(2)}</div>
+            ${warn}
+
+            <div class="btns">
+                <button class="paid" onclick="markPaid('${name}')">Paid</button>
+                <button class="delete" onclick="deleteDebt('${name}')">Delete</button>
+            </div>
+        </div>
+        `;
+    }
+}
+
+render();
+</script>
+
+</body>
+</html>
